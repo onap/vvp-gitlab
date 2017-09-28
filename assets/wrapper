@@ -1,0 +1,202 @@
+#!/bin/bash
+# ============LICENSE_START======================================================= 
+# org.onap.vvp/gitlab
+# ===================================================================
+# Copyright © 2017 AT&T Intellectual Property. All rights reserved.
+# ===================================================================
+#
+# Unless otherwise specified, all software contained herein is licensed
+# under the Apache License, Version 2.0 (the “License”);
+# you may not use this software except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#             http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+#
+# Unless otherwise specified, all documentation contained herein is licensed
+# under the Creative Commons License, Attribution 4.0 Intl. (the “License”);
+# you may not use this documentation except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#             https://creativecommons.org/licenses/by/4.0/
+#
+# Unless required by applicable law or agreed to in writing, documentation
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ============LICENSE_END============================================
+#
+# ECOMP is a trademark and service mark of AT&T Intellectual Property.
+
+set -e
+
+chmod 755 /
+echo "setting up /etc/hosts"
+echo "127.0.0.1 localhost localhost.localdomain" >>/etc/hosts
+chmod 644 /etc/hosts
+
+echo "setting up resolv.conf"
+echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+chmod 644 /etc/resolv.conf
+
+function sigterm_handler() {
+    echo "SIGTERM signal received, try to gracefully shutdown all services..."
+    gitlab-ctl stop
+}
+
+trap "sigterm_handler; exit" TERM
+
+source /RELEASE
+echo "Thank you for using GitLab Docker Image!"
+echo "Current version: $RELEASE_PACKAGE=$RELEASE_VERSION"
+echo ""
+if [[ "$PACKAGECLOUD_REPO" == "unstable" ]]; then
+	echo "You are using UNSTABLE version of $RELEASE_PACKAGE!"
+	echo ""
+fi
+echo "Configure GitLab for your system by editing /etc/gitlab/gitlab.rb file"
+echo "And restart this container to reload settings."
+echo "To do it use docker exec:"
+echo
+echo "  docker exec -it gitlab vim /etc/gitlab/gitlab.rb"
+echo "  docker restart gitlab"
+echo
+echo "For a comprehensive list of configuration options please see the Omnibus GitLab readme"
+echo "https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/README.md"
+echo
+echo "If this container fails to start due to permission problems try to fix it by executing:"
+echo
+echo "  docker exec -it gitlab update-permissions"
+echo "  docker restart gitlab"
+echo
+
+# Copy gitlab.rb for the first time
+if [[ ! -e /etc/gitlab/gitlab.rb ]]; then
+	echo "Installing gitlab.rb config..."
+	cp /opt/gitlab/etc/gitlab.rb.template /etc/gitlab/gitlab.rb
+	chmod 0600 /etc/gitlab/gitlab.rb
+fi
+
+# Generate ssh host key for the first time
+if [[ ! -f /etc/gitlab/ssh_host_rsa_key ]]; then
+	echo "Generating ssh_host_rsa_key..."
+	ssh-keygen -f /etc/gitlab/ssh_host_rsa_key -N '' -t rsa
+	chmod 0600 /etc/gitlab/ssh_host_rsa_key
+fi
+if [[ ! -f /etc/gitlab/ssh_host_ecdsa_key ]]; then
+	echo "Generating ssh_host_ecdsa_key..."
+	ssh-keygen -f /etc/gitlab/ssh_host_ecdsa_key -N '' -t ecdsa
+	chmod 0600 /etc/gitlab/ssh_host_ecdsa_key
+fi
+if [[ ! -f /etc/gitlab/ssh_host_ed25519_key ]]; then
+	echo "Generating ssh_host_ed25519_key..."
+	ssh-keygen -f /etc/gitlab/ssh_host_ed25519_key -N '' -t ed25519
+	chmod 0600 /etc/gitlab/ssh_host_ed25519_key
+fi
+
+# Remove all services, the reconfigure will create them
+echo "Preparing services..."
+rm -f /opt/gitlab/service/*
+ln -s /opt/gitlab/sv/sshd /opt/gitlab/service
+mkdir -p /var/log/gitlab/sshd
+
+# Start service manager
+echo "Starting services..."
+GITLAB_OMNIBUS_CONFIG=/opt/gitlab/embedded/bin/runsvdir-start &
+/opt/gitlab/embedded/bin/runsvdir-start &
+
+
+# Configure gitlab package
+# WARNING:
+# the preinst script has the database backup
+# It will not be executed, because all services are not yet started
+# They will be started when `reconfigure` is executed
+echo "Configuring GitLab package..."
+/var/lib/dpkg/info/${RELEASE_PACKAGE}.preinst upgrade
+
+echo "Configuring GitLab..."
+gitlab-ctl reconfigure
+
+echo "Waiting up to three minutes for the postgres socket to appear..."
+for f in `seq 12`; do
+	ls -l "/var/opt/gitlab/postgresql/.s.PGSQL.5432" && break
+	sleep 15
+done
+
+[ -e "/var/opt/gitlab/postgresql/.s.PGSQL.5432" ] || {
+	echo "ERROR: Postgres socket file still unavailable. Aborting."
+	mount
+	exit 5
+}
+
+echo "Attempting to connect to the postgres database..."
+su gitlab-psql -c "`which psql` -h /var/opt/gitlab/postgresql/ gitlabhq_production -c \"select 'database up';\"" || {
+	echo "ERROR: Could not run simple command in postgresql database. Aborting."
+	mount
+	exit 6
+}
+
+# TODO psql is installed. use it to test connection to database.
+
+if [ "$ADMIN_PASSWORD" ]; then
+	echo "Setting admin password from environment..."
+	# set the admin password
+	gitlab-rails runner '
+		u = User.where(id: 1).first
+		u.password = ENV["ADMIN_PASSWORD"]
+		u.password_confirmation = ENV["ADMIN_PASSWORD"]
+		u.password_expires_at = nil
+		u.reset_password_token = nil
+		u.reset_password_sent_at = nil
+		u.password_automatically_set = false
+		u.authentication_token = ENV["AUTHENTICATION_TOKEN"]
+		u.save!
+	'
+	echo "[DBG] $0: Passed the gitlab-rails runner" 
+else
+	echo "$0: Warning: ADMIN_PASSWORD was not set in the environment." >&2
+fi
+
+echo "Setting initial jenkins deploy key into admin user ssh keys..."
+python -c '
+import requests
+import os
+
+def auth(request):
+    request.headers["PRIVATE-TOKEN"] = os.environ["AUTHENTICATION_TOKEN"]
+    return request
+
+# Delete any old deploy keys
+for old_key in requests.get("http://localhost/api/v3/user/keys",
+    auth=auth).json():
+
+    if old_key["title"] != "Jenkins deploy key":
+        continue
+
+    requests.delete("http://localhost/api/v3/user/keys/{id}".format(**old_key),
+        auth=auth)
+
+# Set the new deploy key
+requests.post("http://localhost/api/v3/user/keys",
+    params={
+        "title": "Jenkins deploy key",
+        "key": open("/tmp/deploykey/deploykey.pub").read(),
+    },
+    auth=auth)
+'
+
+# Tail all logs
+echo "Tailing logs..."
+gitlab-ctl tail &
+
+# Wait for SIGTERM
+wait
