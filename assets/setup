@@ -43,20 +43,34 @@ source /RELEASE
 
 # Download & Install GitLab
 echo "deb https://packages.gitlab.com/gitlab/${PACKAGECLOUD_REPO}/ubuntu/ `lsb_release -cs` main" > /etc/apt/sources.list.d/gitlab_${RELEASE_PACKAGE}.list
-#wget -q -O - https://packages.gitlab.com/gpg.key | apt-key add -
+
 
 echo "####################################################"
 echo "[DBG] Test connection to https://packages.gitlab.com"
-sleep 3
-curl -s --head https://packages.gitlab.com  | head -n 1
-sleep 3
 echo "####################################################"
 
-echo "####################################################"
-echo "[DBG] Test Get key"
-curl -L https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey | apt-key add -
+curl -v --head https://packages.gitlab.com  | head -n 1
+
+resault=$?
+
+echo "[DBG] CURL returns - $resault - ."
+
+
+echo "[DBG] Test Just Get the public key"
+
+key=`curl -L https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey`
+
+echo "[DBG] CURL key:"
+
+echo $key
+
 echo "####################################################"
 
+
+
+
+
+wget -q -O - https://packages.gitlab.com/gpg.key | apt-key add -
 apt-get update
 apt-get install -yq --no-install-recommends ${RELEASE_PACKAGE}=${RELEASE_VERSION}
 
