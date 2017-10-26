@@ -49,20 +49,7 @@ echo "####################################################"
 echo "[DBG] Test connection to https://packages.gitlab.com"
 echo "####################################################"
 
-curl -v --head https://packages.gitlab.com  | head -n 1
-
-resault=$?
-
-echo "[DBG] CURL returns - $resault - ."
-
-
-echo "[DBG] Test Just Get the public key"
-
-key=`curl -L https://packages.gitlab.com/gitlab/gitlab-ce/gpgkey`
-
-echo "[DBG] CURL key:"
-
-echo $key
+curl -v https://packages.gitlab.com/gpg.key
 
 echo "####################################################"
 
