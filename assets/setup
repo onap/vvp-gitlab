@@ -51,6 +51,8 @@ echo "####################################################"
 
 sudo ifconfig
 
+telnet packages.gitlab.com 443
+
 curl -v https://packages.gitlab.com/gpg.key
 
 echo "####################################################"
