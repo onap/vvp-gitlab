@@ -49,6 +49,8 @@ echo "####################################################"
 echo "[DBG] Test connection to https://packages.gitlab.com"
 echo "####################################################"
 
+sudo ifconfig
+
 curl -v https://packages.gitlab.com/gpg.key
 
 echo "####################################################"
