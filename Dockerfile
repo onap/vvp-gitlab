@@ -1,4 +1,4 @@
-# ============LICENSE_START======================================================= 
+# ============LICENSE_START=======================================================
 # org.onap.vvp/gitlab
 # ===================================================================
 # Copyright © 2017 AT&T Intellectual Property. All rights reserved.
@@ -47,7 +47,8 @@ RUN apt-get update -q \
       apt-transport-https \
       vim \
       nano \
-      patch
+      patch \
+      curl
 
 # Copy assets
 COPY RELEASE /
