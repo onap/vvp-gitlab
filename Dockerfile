@@ -48,7 +48,8 @@ RUN apt-get update -q \
       vim \
       nano \
       patch \
-      curl
+      curl \
+      telnet
 
 # Copy assets
 COPY RELEASE /

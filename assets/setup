@@ -49,17 +49,19 @@ echo "####################################################"
 echo "[DBG] Test connection to https://packages.gitlab.com"
 echo "####################################################"
 
+
+echo "################  IFCONFIG  #######################"
 sudo ifconfig
 
+echo "################  TELNET  #######################"
+
 telnet packages.gitlab.com 443
+
+echo "################  CURL  #######################"
 
 curl -v https://packages.gitlab.com/gpg.key
 
 echo "####################################################"
-
-
-
-
 
 wget -q -O - https://packages.gitlab.com/gpg.key | apt-key add -
 apt-get update
