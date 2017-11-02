@@ -47,9 +47,7 @@ RUN apt-get update -q \
       apt-transport-https \
       vim \
       nano \
-      patch \
-      curl \
-      telnet
+      patch
 
 # Copy assets
 COPY RELEASE /

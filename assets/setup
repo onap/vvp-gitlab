@@ -43,27 +43,7 @@ source /RELEASE
 
 # Download & Install GitLab
 echo "deb https://packages.gitlab.com/gitlab/${PACKAGECLOUD_REPO}/ubuntu/ `lsb_release -cs` main" > /etc/apt/sources.list.d/gitlab_${RELEASE_PACKAGE}.list
-
-
-echo "####################################################"
-echo "[DBG] Test connection to https://packages.gitlab.com"
-echo "####################################################"
-
-
-echo "################  IFCONFIG  #######################"
-sudo ifconfig
-
-echo "################  TELNET  #######################"
-
-telnet packages.gitlab.com 443
-
-echo "################  CURL  #######################"
-
-curl -v https://packages.gitlab.com/gpg.key
-
-echo "####################################################"
-
-wget -q -O - https://packages.gitlab.com/gpg.key | apt-key add -
+wget --no-check-certificate -q -O - https://packages.gitlab.com/gpg.key | apt-key add -
 apt-get update
 apt-get install -yq --no-install-recommends ${RELEASE_PACKAGE}=${RELEASE_VERSION}
 
