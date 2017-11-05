@@ -49,14 +49,21 @@ RUN apt-get update -q \
       nano \
       patch
 
-#Workaround for onap
-ADD https://packages.gitlab.com/gpg.key key
-RUN cat key | apt-key add -
-RUN apt-key list
-
 # Copy assets
 COPY RELEASE /
 COPY assets/ /assets/
+
+#Workaround for onap
+ENV RELEASE_VERSION 8.6.1-ce.0
+ENV PACKAGECLOUD_REPO gitlab-ce
+ENV RELEASE_PACKAGE gitlab-ce
+
+ADD https://packages.gitlab.com/gpg.key key
+RUN cat key | apt-key add -
+RUN apt-key list
+RUN echo "deb https://packages.gitlab.com/gitlab/${PACKAGECLOUD_REPO}/ubuntu/ `lsb_release -cs` main" > /etc/apt/sources.list.d/gitlab_${RELEASE_PACKAGE}.list
+RUN apt-get update
+
 RUN /assets/setup
 
 # Allow to access embedded tools
