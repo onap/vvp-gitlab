@@ -49,6 +49,11 @@ RUN apt-get update -q \
       nano \
       patch
 
+#Workaround for onap
+ADD https://packages.gitlab.com/gpg.key key
+RUN cat key | apt-key add -
+RUN apt-key list
+
 # Copy assets
 COPY RELEASE /
 COPY assets/ /assets/
