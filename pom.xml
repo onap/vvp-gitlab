@@ -22,7 +22,7 @@
         <!--docker-->
         <docker.tag>${project.version}-${timestamp}</docker.tag>
         <docker.latest.tag>${project.version}-latest</docker.latest.tag>
-        <docker.buildArg.https_proxy>${env.NEXUSPROXY}</docker.buildArg.https_proxy>
+        <docker.buildArg.https_proxy>${env.HTTPS_PROXY}</docker.buildArg.https_proxy>
         <!--
           <docker.buildArg.https_proxy>https://165.227.53.107:3128</docker.buildArg.https_proxy>
           <docker.buildArg.http_proxy>http://35.196.90.170:80</docker.buildArg.http_proxy>
