@@ -7,8 +7,8 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.openecomp.vvp</groupId>
-  <artifactId>vvp-gitlab</artifactId>
+  <groupId>org.openecomp.vvp.gitlab</groupId>
+  <artifactId>gitlab</artifactId>
   <packaging>pom</packaging>
   <version>1.0.0-SNAPSHOT</version>
   <name>vvp-gitlab</name>
@@ -22,9 +22,11 @@
         <!--docker-->
         <docker.tag>${project.version}-${timestamp}</docker.tag>
         <docker.latest.tag>${project.version}-latest</docker.latest.tag>
-        <!--  docker.buildArg.https_proxy>${env.HTTPS_PROXY}</docker.buildArg.https_proxy -->
-        <docker.buildArg.https_proxy>https://165.227.53.107:3128</docker.buildArg.https_proxy>
-        <docker.buildArg.http_proxy>http://35.196.90.170:80</docker.buildArg.http_proxy>
+        <docker.buildArg.https_proxy>${env.NEXUSPROXY}</docker.buildArg.https_proxy>
+        <!--
+          <docker.buildArg.https_proxy>https://165.227.53.107:3128</docker.buildArg.https_proxy>
+          <docker.buildArg.http_proxy>http://35.196.90.170:80</docker.buildArg.http_proxy>
+        -->
   </properties>
 
   <build>
@@ -68,7 +70,7 @@
                 <registry>nexus3.onap.org:10003</registry>
                 <images>
                     <image>
-                        <name>openecomp/vvp-gitlab</name>
+                        <name>openecomp/vvp/gitlab</name>
                         <alias>vvp-gitlab</alias>
                         <build>
                             <cleanup>true</cleanup>
@@ -109,7 +111,7 @@
                         <goal>push</goal>
                     </goals>
                     <configuration>
-                        <image>openecomp/vvp-gitlab</image>
+                        <image>openecomp/vvp/gitlab</image>
                     </configuration>
                 </execution>
             </executions>
