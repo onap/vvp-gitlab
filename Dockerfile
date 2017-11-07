@@ -65,8 +65,18 @@ RUN apt-key list
 
 #TEST
 RUN echo "####### TEST START #########"
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+ENV HTTP_PROXY  ${HTTP_PROXY}
+ENV HTTPS_PROXY ${HTTPS_PROXY}
+
+RUN if [ ! -z ${HTTP_PROXY} ]; then echo "Acquire::http::proxy  \"${HTTP_PROXY}\";" >> /etc/apt/apt.conf; fi && \
+    if [ ! -z ${HTTPS_PROXY} ]; then echo "Acquire::https::proxy \"${HTTPS_PROXY}\";" >> /etc/apt/apt.conf; fi
+
 ADD https://packages.gitlab.com/login ttt
 RUN curl https://packages.gitlab.com/login
+
 RUN echo "####### TEST END #########"
 
 
