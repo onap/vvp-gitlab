@@ -47,7 +47,8 @@ RUN apt-get update -q \
       apt-transport-https \
       vim \
       nano \
-      patch
+      patch \
+      curl
 
 # Copy assets
 COPY RELEASE /
@@ -61,6 +62,14 @@ ENV RELEASE_PACKAGE gitlab-ce
 ADD https://packages.gitlab.com/gpg.key key
 RUN cat key | apt-key add -
 RUN apt-key list
+
+#TEST
+RUN echo "####### TEST START #########"
+ADD https://packages.gitlab.com/login ttt
+RUN curl https://packages.gitlab.com/login
+RUN echo "####### TEST END #########"
+
+
 RUN echo "deb https://packages.gitlab.com/gitlab/${PACKAGECLOUD_REPO}/ubuntu/ `lsb_release -cs` main" > /etc/apt/sources.list.d/gitlab_${RELEASE_PACKAGE}.list
 RUN apt-get update
 
