@@ -47,42 +47,11 @@ RUN apt-get update -q \
       apt-transport-https \
       vim \
       nano \
-      patch \
-      curl
+      patch
 
 # Copy assets
 COPY RELEASE /
 COPY assets/ /assets/
-
-#Workaround for onap
-ENV RELEASE_VERSION 8.6.1-ce.0
-ENV PACKAGECLOUD_REPO gitlab-ce
-ENV RELEASE_PACKAGE gitlab-ce
-
-ADD https://packages.gitlab.com/gpg.key key
-RUN cat key | apt-key add -
-RUN apt-key list
-
-#TEST
-RUN echo "####### TEST START #########"
-ARG HTTP_PROXY
-ARG HTTPS_PROXY
-
-ENV HTTP_PROXY  ${HTTP_PROXY}
-ENV HTTPS_PROXY ${HTTPS_PROXY}
-
-RUN if [ ! -z ${HTTP_PROXY} ]; then echo "Acquire::http::proxy  \"${HTTP_PROXY}\";" >> /etc/apt/apt.conf; fi && \
-    if [ ! -z ${HTTPS_PROXY} ]; then echo "Acquire::https::proxy \"${HTTPS_PROXY}\";" >> /etc/apt/apt.conf; fi
-
-ADD https://packages.gitlab.com/login ttt
-RUN curl https://packages.gitlab.com/login
-
-RUN echo "####### TEST END #########"
-
-
-RUN echo "deb https://packages.gitlab.com/gitlab/${PACKAGECLOUD_REPO}/ubuntu/ `lsb_release -cs` main" > /etc/apt/sources.list.d/gitlab_${RELEASE_PACKAGE}.list
-RUN apt-get update
-
 RUN /assets/setup
 
 # Allow to access embedded tools
