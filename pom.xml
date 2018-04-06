@@ -7,7 +7,7 @@
     <version>1.0.0-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.openecomp.vvp.gitlab</groupId>
+  <groupId>org.onap.vvp.gitlab</groupId>
   <artifactId>gitlab</artifactId>
   <packaging>pom</packaging>
   <version>1.0.0-SNAPSHOT</version>
@@ -15,7 +15,7 @@
 
   <properties>
         <!--nexus-->
-        <sitePath>/content/sites/site/org/openecomp/vvp/${project.artifactId}/${project.version}</sitePath>
+        <sitePath>/content/sites/site/org/onap/vvp/${project.artifactId}/${project.version}</sitePath>
         <!--maven-->
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyyMMdd'T'HHmmss'Z'</maven.build.timestamp.format>
@@ -47,7 +47,7 @@
                 <registry>nexus3.onap.org:10003</registry>
                 <images>
                     <image>
-                        <name>openecomp/vvp/gitlab</name>
+                        <name>onap/vvp/gitlab</name>
                         <alias>vvp-gitlab</alias>
                         <build>
                             <cleanup>true</cleanup>
@@ -87,7 +87,7 @@
                         <goal>push</goal>
                     </goals>
                     <configuration>
-                        <image>openecomp/vvp/gitlab</image>
+                        <image>onap/vvp/gitlab</image>
                     </configuration>
                 </execution>
             </executions>
